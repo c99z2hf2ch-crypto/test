@@ -5,606 +5,200 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Handball Match Manager</title>
   <style>
-    body{font-family:Arial,sans-serif;margin:0;background:#f1f5f9;color:#0f172a;-webkit-tap-highlight-color:transparent}
-    .wrap{max-width:980px;margin:auto;padding:12px}
-    .card{background:#fff;border-radius:16px;padding:14px;margin-bottom:12px}
-    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-    .between{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+    body{font-family:Arial,sans-serif;margin:0;background:#f1f5f9;color:#0f172a}
+    .wrap{max-width:1280px;margin:auto;padding:12px}
+    .card{background:#fff;border-radius:16px;padding:12px;margin-bottom:10px;box-shadow:0 8px 24px rgba(15,23,42,.08)}
+    .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    .between{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
     .hidden{display:none}
-    input{padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;min-width:220px}
-    button{border:none;border-radius:12px;padding:14px 16px;font-weight:700;cursor:pointer;font-size:16px;min-height:52px}
-    .dark{background:#0f172a;color:#fff}
-    .light{background:#e2e8f0;color:#0f172a}
-    .green{background:#16a34a;color:#fff}
-    .red{background:#dc2626;color:#fff}
-    .amber{background:#f59e0b;color:#fff}
+    input,select{padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;font-size:16px;background:#fff}
+    button{border:none;border-radius:10px;padding:12px 14px;font-weight:700;cursor:pointer;font-size:15px}
+    .dark{background:#0f172a;color:#fff}.light{background:#e2e8f0;color:#0f172a}.green{background:#16a34a;color:#fff}.red{background:#dc2626;color:#fff}.amber{background:#f59e0b;color:#fff}.blue{background:#2563eb;color:#fff}
     .score{font-size:48px;font-weight:900;text-align:center}
     .match{border:1px solid #e2e8f0;border-radius:12px;padding:12px;background:#f8fafc}
-    .player-item{border:1px solid #e2e8f0;border-radius:14px;padding:14px;background:#f8fafc;cursor:pointer}
-    .player-item.selected{border-color:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.22);background:#f0fdf4}
-    .actions-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-    .sticky-actions{position:sticky;bottom:10px;z-index:20;box-shadow:0 10px 24px rgba(15,23,42,.12)}
-    .compact-title{font-size:24px}
-    @media (max-width:720px){
-      .wrap{padding:10px}
-      .card{padding:12px;border-radius:14px}
-      .row{gap:8px}
-      input{min-width:0;width:100%;font-size:16px;padding:12px}
-      button{width:100%;padding:16px 14px;font-size:17px;min-height:56px}
-      .score{font-size:40px}
-      .between{align-items:flex-start}
-      .top-nav{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));width:100%}
-      .top-nav button{width:100%}
-      .actions-grid{grid-template-columns:1fr 1fr}
-      .sticky-actions{bottom:6px}
-      table{font-size:13px}
-    }
-    table{width:100%;border-collapse:collapse}
-    th,td{padding:8px;border-bottom:1px solid #e2e8f0;text-align:center}
+    .layout{display:grid;grid-template-columns:300px 1fr;gap:12px}
+    .sidebar{position:sticky;top:12px;align-self:start}
+    .actions-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .players-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+    .keepers-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+    .entity{border:1px solid #e2e8f0;border-radius:12px;padding:12px;background:#f8fafc;cursor:pointer}
+    .entity.selected-player{border-color:#22c55e;background:#dcfce7}
+    .entity.selected-keeper{border-color:#0ea5e9;background:#e0f2fe}
+    .small{font-size:12px;color:#64748b;margin-top:4px}
+    .pill{display:inline-block;padding:4px 8px;border-radius:999px;background:#e2e8f0;font-size:12px;font-weight:700}
+    table{width:100%;border-collapse:collapse;font-size:14px}
+    th,td{padding:8px;border-bottom:1px solid #e2e8f0;text-align:center;white-space:nowrap}
     th:first-child,td:first-child{text-align:left}
+    .table-wrap{overflow:auto}
+    @media (max-width:900px){.layout{grid-template-columns:1fr}.sidebar{position:static}.players-grid{grid-template-columns:repeat(2,1fr)}.keepers-grid{grid-template-columns:1fr}.actions-grid{grid-template-columns:1fr 1fr}}
+    @media (max-width:640px){.players-grid,.actions-grid{grid-template-columns:1fr}.score{font-size:40px}button,input,select{width:100%}}
   </style>
 </head>
 <body>
-  <div class="wrap">
+<div class="wrap">
+  <div class="card between">
+    <div>
+      <h1 style="margin:0;font-size:28px">Házená – Match Manager</h1>
+      <div class="small" style="margin-top:6px">Zápasy, hráči, brankáři, přehled a auto-save</div>
+    </div>
+    <div class="row">
+      <button id="navMatches" class="dark">Zápasy</button>
+      <button id="navLive" class="light">Zápas</button>
+      <button id="navOverview" class="light">Přehled</button>
+    </div>
+  </div>
+
+  <section id="screenMatches">
+    <div class="card row">
+      <input id="newOpponent" placeholder="Soupeř" />
+      <input id="newDate" type="date" />
+      <input id="newCompetition" placeholder="Soutěž" />
+      <button id="createMatchBtn" class="green">Nový zápas</button>
+    </div>
+    <div class="card">
+      <div class="between" style="margin-bottom:10px">
+        <h2 style="margin:0;font-size:22px">Seznam zápasů</h2>
+        <div class="small">Klikni na otevření</div>
+      </div>
+      <div id="matchesList" style="display:grid;gap:10px"></div>
+    </div>
+  </section>
+
+  <section id="screenLive" class="hidden">
     <div class="card between">
       <div>
-        <h1 class="compact-title" style="margin:0">Házená – Match Manager</h1>
-        <div style="color:#64748b;margin-top:4px">Auto-save verze</div>
+        <h2 id="liveTitle" style="margin:0;font-size:22px">Žádný vybraný zápas</h2>
+        <div id="liveMeta" class="small"></div>
       </div>
-      <div class="row top-nav">
-        <button id="navMatches" class="dark">Zápasy</button>
-        <button id="navLive" class="light">Zápas</button>
-        <button id="navOverview" class="light">Přehled</button>
+      <div class="row">
+        <button id="undoBtn" class="amber">Undo</button>
       </div>
     </div>
 
-    <section id="screenMatches">
-      <div class="card">
-        <div class="row">
-          <input id="newOpponent" type="text" placeholder="Soupeř" />
-          <button id="createMatchBtn" class="green">Nový zápas</button>
-        </div>
-      </div>
-      <div class="card">
-        <div class="between" style="margin-bottom:12px">
-          <h2 style="margin:0;font-size:22px">Seznam zápasů</h2>
-          <div style="color:#64748b">Klikni na otevření</div>
-        </div>
-        <div id="matchesList" style="display:grid;gap:10px"></div>
-      </div>
-    </section>
+    <div class="card"><div id="liveScore" class="score">0 : 0</div></div>
 
-    <section id="screenLive" class="hidden">
-      <div class="card between">
-        <div>
-          <h2 id="liveTitle" style="margin:0;font-size:22px">Žádný vybraný zápas</h2>
-          <div id="liveMeta" style="color:#64748b;margin-top:4px">Nejprve vytvoř nebo otevři zápas</div>
-        </div>
-      </div>
-
-      <div class="card"><div id="liveScore" class="score">0 : 0</div></div>
-
-      <div class="card">
-        <div class="between" style="margin-bottom:12px"><h3 style="margin:0">Hráči</h3></div>
-        <div id="playersList" style="display:grid;gap:10px;margin-bottom:14px"></div>
-      </div>
-
-      <div class="card">
-        <div class="between" style="margin-bottom:12px"><h3 style="margin:0">Brankáři</h3></div>
-        <div id="keepersList" style="display:grid;gap:10px;margin-bottom:14px"></div>
-      </div>
-
-      <div class="card">
-        <div class="between" style="margin-bottom:12px"><h3 style="margin:0">Akce</h3></div>
-        <div class="row" style="margin-bottom:8px">
-          <button id="tabAttack" class="dark">Útok</button>
-          <button id="tabDefense" class="light">Obrana</button>
-          <button id="tabPenalty" class="light">Tresty</button>
-        </div>
-        <div class="card sticky-actions"><div id="actionButtons" class="actions-grid"></div></div>
-      </div>
-
-      <div class="card">
-        <div class="between" style="margin-bottom:12px"><h3 style="margin:0">Rychlé skóre</h3></div>
-        <div class="row">
-          <button id="ourGoalBtn" class="green">+ Gól my</button>
-          <button id="oppGoalBtn" class="red">+ Gól soupeř</button>
-          <button id="resetScoreBtn" class="light">Reset skóre</button>
-          <button id="undoBtn" class="amber">Undo</button>
-        </div>
-      </div>
-    </section>
-
-    <section id="screenOverview" class="hidden">
-      <div class="card between">
-        <div>
-          <h2 id="overviewTitle" style="margin:0;font-size:22px">Přehled zápasu</h2>
-          <div id="overviewMeta" style="color:#64748b;margin-top:4px">Vyber zápas</div>
-        </div>
-      </div>
-
-      <div class="card" style="overflow:auto">
-        <h3>Hráči</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>Hráč</th><th>Góly</th><th>Střely</th><th>%</th><th>As.</th><th>Ztr.</th><th>Tech.</th><th>9m</th><th>6m</th><th>Kř.</th><th>Br.</th><th>7m</th><th>O+</th><th>O-</th><th>Přer.</th><th>Blok</th><th>Zisk</th><th>7m zp.</th><th>2 min</th><th>ŽK</th><th>ČK</th>
-            </tr>
-          </thead>
-          <tbody id="overviewPlayers"></tbody>
-        </table>
-
-        <h3 style="margin-top:20px">Brankáři</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>Brankář</th><th>Zákroky</th><th>Střely</th><th>%</th><th>9m</th><th>6m</th><th>Kř.</th><th>Br.</th><th>7m</th><th>Trhák+</th><th>Trhák-</th>
-            </tr>
-          </thead>
-          <tbody id="overviewKeepers"></tbody>
-        </table>
-      </div>
-    </section>
-  </div>
-
-  <script>
-    const STORAGE_KEY = 'handball_match_manager_autosave_v3';
-    const rosterPlayers = ['Grepl Jan','Hampl Jiří','Jurečka David','Sladovník Daniel','Bečička Martin','Hudeček Šimon','Jurík Martin','Jurík Tomáš','Letocha Radim','Sikora Daniel','Zatloukal Matyáš','Javůrek Aleš','Kamaryt Michal','Šestořád Pavel'];
-    const rosterKeepers = ['Jakub Hromek','Jiří Sladovník'];
-    const shotTypes = ['9m','6m','Křídlo','Brejk','7m'];
-
-    const app = {
-      history: [],
-      playerTab: 'attack',
-      screen: 'matches',
-      selectedMatchId: null,
-      selectedPlayerIndex: null,
-      selectedKeeperIndex: null,
-      mode: 'player',
-      matches: []
-    };
-
-    function currentMatch() {
-      return app.matches.find(m => m.id === app.selectedMatchId) || null;
-    }
-
-    function saveState() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(app));
-    }
-
-    function loadState() {
-      try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return;
-        const saved = JSON.parse(raw);
-        Object.assign(app, saved);
-      } catch (_) {}
-    }
-
-    function pushHistory() {
-      app.history.push(JSON.stringify({
-        matches: app.matches,
-        selectedMatchId: app.selectedMatchId,
-        selectedPlayerIndex: app.selectedPlayerIndex,
-        selectedKeeperIndex: app.selectedKeeperIndex,
-        screen: app.screen,
-        playerTab: app.playerTab,
-        mode: app.mode
-      }));
-    }
-
-    function undoLast() {
-      if (!app.history.length) return;
-      const prev = JSON.parse(app.history.pop());
-      app.matches = prev.matches;
-      app.selectedMatchId = prev.selectedMatchId;
-      app.selectedPlayerIndex = prev.selectedPlayerIndex;
-      app.selectedKeeperIndex = prev.selectedKeeperIndex;
-      app.screen = prev.screen;
-      app.playerTab = prev.playerTab;
-      app.mode = prev.mode;
-      render();
-    }
-
-    function createMatch() {
-      const input = document.getElementById('newOpponent');
-      const opponent = input.value.trim() || 'Soupeř';
-      const match = {
-        id: 'm_' + Date.now(),
-        opponent,
-        ourScore: 0,
-        oppScore: 0,
-        players: rosterPlayers.map(name => ({
-          name, goals: 0, shots: 0, assists: 0, losses: 0, techErrors: 0,
-          defPlus: 0, defMinus: 0, interruptions: 0, blocks: 0, gains: 0, caused7m: 0,
-          twoMin: 0, yellow: 0, red: 0,
-          byType: Object.fromEntries(shotTypes.map(t => [t, { goals: 0, shots: 0 }]))
-        })),
-        keepers: rosterKeepers.map(name => ({
-          name, saves: 0, shots: 0, fastPlus: 0, fastMinus: 0,
-          byType: Object.fromEntries(shotTypes.map(t => [t, { saves: 0, shots: 0 }]))
-        }))
-      };
-      app.matches.unshift(match);
-      app.selectedMatchId = match.id;
-      app.selectedPlayerIndex = null;
-      app.selectedKeeperIndex = null;
-      app.mode = 'player';
-      app.screen = 'live';
-      input.value = '';
-      render();
-    }
-
-    function openMatch(id) {
-      app.selectedMatchId = id;
-      app.selectedPlayerIndex = null;
-      app.selectedKeeperIndex = null;
-      app.mode = 'player';
-      app.screen = 'live';
-      render();
-    }
-
-    function showScreen(screen) {
-      app.screen = screen;
-      render();
-    }
-
-    function setTab(tab) {
-      app.playerTab = tab;
-      render();
-    }
-
-    function selectPlayer(index) {
-      app.mode = 'player';
-      app.selectedPlayerIndex = index;
-      app.selectedKeeperIndex = null;
-      render();
-    }
-
-    function selectKeeper(index) {
-      app.mode = 'keeper';
-      app.selectedKeeperIndex = index;
-      app.selectedPlayerIndex = null;
-      render();
-    }
-
-    function addPlayerGoal(type) {
-      const match = currentMatch();
-      if (!match || app.selectedPlayerIndex === null) return;
-      pushHistory();
-      const p = match.players[app.selectedPlayerIndex];
-      p.goals += 1;
-      p.shots += 1;
-      p.byType[type].goals += 1;
-      p.byType[type].shots += 1;
-      match.ourScore += 1;
-      render();
-    }
-
-    function addPlayerShot(type) {
-      const match = currentMatch();
-      if (!match || app.selectedPlayerIndex === null) return;
-      pushHistory();
-      const p = match.players[app.selectedPlayerIndex];
-      p.shots += 1;
-      p.byType[type].shots += 1;
-      render();
-    }
-
-    function addAssist() {
-      const match = currentMatch();
-      if (!match || app.selectedPlayerIndex === null) return;
-      pushHistory();
-      match.players[app.selectedPlayerIndex].assists += 1;
-      render();
-    }
-
-    function addLoss() {
-      const match = currentMatch();
-      if (!match || app.selectedPlayerIndex === null) return;
-      pushHistory();
-      match.players[app.selectedPlayerIndex].losses += 1;
-      render();
-    }
-
-    function addTechError() {
-      const match = currentMatch();
-      if (!match || app.selectedPlayerIndex === null) return;
-      pushHistory();
-      match.players[app.selectedPlayerIndex].techErrors += 1;
-      render();
-    }
-
-    function addTwoMinWin() {
-      const match = currentMatch();
-      if (!match || app.selectedPlayerIndex === null) return;
-      pushHistory();
-      render();
-    }
-
-    function addDefense(type) {
-      const match = currentMatch();
-      if (!match || app.selectedPlayerIndex === null) return;
-      pushHistory();
-      const p = match.players[app.selectedPlayerIndex];
-      if (type === 'plus') p.defPlus += 1;
-      if (type === 'minus') p.defMinus += 1;
-      if (type === 'interruptions') p.interruptions += 1;
-      if (type === 'blocks') p.blocks += 1;
-      if (type === 'gains') p.gains += 1;
-      if (type === 'caused7m') p.caused7m += 1;
-      render();
-    }
-
-    function addPenalty(type) {
-      const match = currentMatch();
-      if (!match || app.selectedPlayerIndex === null) return;
-      pushHistory();
-      const p = match.players[app.selectedPlayerIndex];
-      if (type === 'twoMin') p.twoMin += 1;
-      if (type === 'yellow') p.yellow += 1;
-      if (type === 'red') p.red += 1;
-      render();
-    }
-
-    function addKeeperSave(type) {
-      const match = currentMatch();
-      if (!match || app.selectedKeeperIndex === null) return;
-      pushHistory();
-      const k = match.keepers[app.selectedKeeperIndex];
-      k.saves += 1;
-      k.shots += 1;
-      k.byType[type].saves += 1;
-      k.byType[type].shots += 1;
-      render();
-    }
-
-    function addKeeperGoalAllowed(type) {
-      const match = currentMatch();
-      if (!match || app.selectedKeeperIndex === null) return;
-      pushHistory();
-      const k = match.keepers[app.selectedKeeperIndex];
-      k.shots += 1;
-      k.byType[type].shots += 1;
-      match.oppScore += 1;
-      render();
-    }
-
-    function addFast(type) {
-      const match = currentMatch();
-      if (!match || app.selectedKeeperIndex === null) return;
-      pushHistory();
-      const k = match.keepers[app.selectedKeeperIndex];
-      if (type === 'plus') k.fastPlus += 1;
-      if (type === 'minus') k.fastMinus += 1;
-      render();
-    }
-
-    function addGoal(side) {
-      const match = currentMatch();
-      if (!match) return;
-      pushHistory();
-      if (side === 'our') match.ourScore += 1;
-      if (side === 'opp') match.oppScore += 1;
-      render();
-    }
-
-    function resetScore() {
-      const match = currentMatch();
-      if (!match) return;
-      pushHistory();
-      match.ourScore = 0;
-      match.oppScore = 0;
-      render();
-    }
-
-    function renderMatches() {
-      const list = document.getElementById('matchesList');
-      if (!app.matches.length) {
-        list.innerHTML = '<div class="match" style="color:#64748b">Zatím nemáš žádný zápas.</div>';
-        return;
-      }
-      list.innerHTML = app.matches.map(m => `
-        <div class="match between">
-          <div>
-            <div style="font-weight:700;font-size:18px">${m.opponent}</div>
-            <div style="color:#64748b;margin-top:4px">Skóre: ${m.ourScore} : ${m.oppScore}</div>
+    <div class="layout">
+      <aside class="sidebar">
+        <div class="card">
+          <div class="small" style="margin:0 0 8px 0;color:#0f172a;font-weight:700">Režim</div>
+          <div class="row" style="margin-bottom:10px">
+            <button id="modePlayerBtn" class="dark">Hráč</button>
+            <button id="modeKeeperBtn" class="light">Brankář</button>
           </div>
-          <button onclick="openMatch('${m.id}')" class="dark">Otevřít</button>
+          <div id="playerTabsWrap">
+            <div class="small" style="margin:0 0 8px 0;color:#0f172a;font-weight:700">Záložky</div>
+            <div class="row" style="margin-bottom:10px">
+              <button id="tabAttack" class="dark">Útok</button>
+              <button id="tabDefense" class="light">Obrana</button>
+              <button id="tabPenalty" class="light">Tresty</button>
+            </div>
+          </div>
+          <div class="small" style="margin:0 0 8px 0;color:#0f172a;font-weight:700">Vybraný</div>
+          <div id="selectedInfo" class="match" style="margin-bottom:10px">Nikdo není vybraný</div>
+          <div id="actionButtons" class="actions-grid"></div>
         </div>
-      `).join('');
-    }
-
-    function renderPlayersList() {
-      const match = currentMatch();
-      const list = document.getElementById('playersList');
-      if (!match) {
-        list.innerHTML = '<div class="match" style="color:#64748b">Nejprve otevři zápas.</div>';
-        return;
-      }
-      list.innerHTML = match.players.map((p, i) => `
-        <div class="player-item ${app.mode === 'player' && app.selectedPlayerIndex === i ? 'selected' : ''}" onclick="selectPlayer(${i})">
-          <div style="font-weight:700">${p.name}</div>
-          <div style="font-size:12px;color:#64748b;margin-top:4px">Góly: ${p.goals} • Střely: ${p.shots}</div>
+        <div class="card">
+          <div class="small" style="margin:0 0 8px 0;color:#0f172a;font-weight:700">Rychlé skóre</div>
+          <div class="actions-grid">
+            <button id="ourGoalBtn" class="green">+ Gól my</button>
+            <button id="oppGoalBtn" class="red">+ Gól soupeř</button>
+            <button id="resetScoreBtn" class="light" style="grid-column:1/-1">Reset skóre</button>
+          </div>
         </div>
-      `).join('');
-    }
+      </aside>
 
-    function renderKeepersList() {
-      const match = currentMatch();
-      const list = document.getElementById('keepersList');
-      if (!match) {
-        list.innerHTML = '<div class="match" style="color:#64748b">Nejprve otevři zápas.</div>';
-        return;
-      }
-      list.innerHTML = match.keepers.map((k, i) => {
-        const pct = k.shots ? Math.round((k.saves / k.shots) * 100) : 0;
-        return `
-          <div class="player-item ${app.mode === 'keeper' && app.selectedKeeperIndex === i ? 'selected' : ''}" onclick="selectKeeper(${i})">
-            <div style="font-weight:700">${k.name}</div>
-            <div style="font-size:12px;color:#64748b;margin-top:4px">Zákroky: ${k.saves} • Střely: ${k.shots} • ${pct}% • Trhák+: ${k.fastPlus} • Trhák-: ${k.fastMinus}</div>
-          </div>`;
-      }).join('');
-    }
+      <main>
+        <div class="card">
+          <div class="between" style="margin-bottom:10px"><h3 style="margin:0">Hráči</h3><span class="pill">3 vedle sebe</span></div>
+          <div id="playersList" class="players-grid"></div>
+        </div>
+        <div class="card">
+          <div class="between" style="margin-bottom:10px"><h3 style="margin:0">Brankáři</h3></div>
+          <div id="keepersList" class="keepers-grid"></div>
+        </div>
+      </main>
+    </div>
+  </section>
 
-    function renderActionButtons() {
-      const wrap = document.getElementById('actionButtons');
-      if (app.mode === 'keeper') {
-        wrap.innerHTML = `
-          ${shotTypes.map(t => `
-            <button onclick="addKeeperSave('${t}')" class="green">${t} zákrok</button>
-            <button onclick="addKeeperGoalAllowed('${t}')" class="red">${t} gól</button>
-          `).join('')}
-          <button onclick="addFast('plus')" class="light">Trhák+</button>
-          <button onclick="addFast('minus')" class="light">Trhák-</button>
-        `;
-      } else if (app.playerTab === 'attack') {
-        wrap.innerHTML = `
-          <button onclick="addAssist()" class="light">Asistence</button>
-          <button onclick="addLoss()" class="light">Ztráta</button>
-          <button onclick="addTechError()" class="light">Tech. chyba</button>
-          <button onclick="addTwoMinWin()" class="light">Zisk 2min</button>
-          ${shotTypes.map(t => `
-            <button onclick="addPlayerGoal('${t}')" class="green">${t} gól</button>
-            <button onclick="addPlayerShot('${t}')" class="light">${t} střela</button>
-          `).join('')}
-        `;
-      } else if (app.playerTab === 'defense') {
-        wrap.innerHTML = `
-          <button onclick="addDefense('plus')" class="light">Obrana+</button>
-          <button onclick="addDefense('minus')" class="light">Obrana-</button>
-          <button onclick="addDefense('interruptions')" class="light">Přerušení</button>
-          <button onclick="addDefense('blocks')" class="light">Blok</button>
-          <button onclick="addDefense('gains')" class="light">Zisk</button>
-          <button onclick="addDefense('caused7m')" class="light">Způsobená 7m</button>
-        `;
-      } else {
-        wrap.innerHTML = `
-          <button onclick="addPenalty('twoMin')" class="light">2 min</button>
-          <button onclick="addPenalty('yellow')" class="light">Žlutá karta</button>
-          <button onclick="addPenalty('red')" class="light">Červená karta</button>
-        `;
-      }
-    }
-
-    function renderTabs() {
-      const attack = document.getElementById('tabAttack');
-      const defense = document.getElementById('tabDefense');
-      const penalty = document.getElementById('tabPenalty');
-      const show = app.mode === 'player';
-      attack.style.display = show ? 'inline-block' : 'none';
-      defense.style.display = show ? 'inline-block' : 'none';
-      penalty.style.display = show ? 'inline-block' : 'none';
-      attack.className = app.playerTab === 'attack' ? 'dark' : 'light';
-      defense.className = app.playerTab === 'defense' ? 'dark' : 'light';
-      penalty.className = app.playerTab === 'penalty' ? 'dark' : 'light';
-    }
-
-    function renderLive() {
-      const match = currentMatch();
-      document.getElementById('liveTitle').textContent = match ? match.opponent : 'Žádný vybraný zápas';
-      document.getElementById('liveMeta').textContent = match ? 'Zápis zápasu' : 'Nejprve vytvoř nebo otevři zápas';
-      document.getElementById('liveScore').textContent = match ? `${match.ourScore} : ${match.oppScore}` : '0 : 0';
-      renderPlayersList();
-      renderKeepersList();
-      renderTabs();
-      renderActionButtons();
-    }
-
-    function renderOverview() {
-      const match = currentMatch();
-      document.getElementById('overviewTitle').textContent = match ? `Přehled: ${match.opponent}` : 'Přehled zápasu';
-      document.getElementById('overviewMeta').textContent = match ? `Skóre ${match.ourScore} : ${match.oppScore}` : 'Vyber zápas';
-
-      const playersBody = document.getElementById('overviewPlayers');
-      const keepersBody = document.getElementById('overviewKeepers');
-
-      if (!match) {
-        playersBody.innerHTML = '<tr><td colspan="21">Nejprve otevři zápas.</td></tr>';
-        keepersBody.innerHTML = '<tr><td colspan="11">Nejprve otevři zápas.</td></tr>';
-        return;
-      }
-
-      playersBody.innerHTML = match.players.map(p => {
-        const pct = p.shots ? Math.round((p.goals / p.shots) * 100) : 0;
-        return `
+  <section id="screenOverview" class="hidden">
+    <div class="card between">
+      <div>
+        <h2 id="overviewTitle" style="margin:0;font-size:22px">Přehled zápasu</h2>
+        <div id="overviewMeta" class="small"></div>
+      </div>
+    </div>
+    <div class="card table-wrap">
+      <h3>Hráči</h3>
+      <table>
+        <thead>
           <tr>
-            <td>${p.name}</td>
-            <td>${p.goals}</td>
-            <td>${p.shots}</td>
-            <td>${pct}%</td>
-            <td>${p.assists}</td>
-            <td>${p.losses}</td>
-            <td>${p.techErrors}</td>
-            <td>${p.byType['9m'].goals}/${p.byType['9m'].shots}</td>
-            <td>${p.byType['6m'].goals}/${p.byType['6m'].shots}</td>
-            <td>${p.byType['Křídlo'].goals}/${p.byType['Křídlo'].shots}</td>
-            <td>${p.byType['Brejk'].goals}/${p.byType['Brejk'].shots}</td>
-            <td>${p.byType['7m'].goals}/${p.byType['7m'].shots}</td>
-            <td>${p.defPlus}</td>
-            <td>${p.defMinus}</td>
-            <td>${p.interruptions}</td>
-            <td>${p.blocks}</td>
-            <td>${p.gains}</td>
-            <td>${p.caused7m}</td>
-            <td>${p.twoMin}</td>
-            <td>${p.yellow}</td>
-            <td>${p.red}</td>
-          </tr>`;
-      }).join('');
-
-      keepersBody.innerHTML = match.keepers.map(k => {
-        const pct = k.shots ? Math.round((k.saves / k.shots) * 100) : 0;
-        return `
+            <th>Hráč</th><th>Góly</th><th>Střely</th><th>%</th><th>As.</th><th>Ztr.</th><th>Tech.</th><th>9m</th><th>6m</th><th>Kř.</th><th>Br.</th><th>7m</th><th>O+</th><th>O-</th><th>Přer.</th><th>Blok</th><th>Zisk</th><th>7m zp.</th><th>2 min</th><th>ŽK</th><th>ČK</th>
+          </tr>
+        </thead>
+        <tbody id="overviewPlayers"></tbody>
+      </table>
+      <h3 style="margin-top:20px">Brankáři</h3>
+      <table>
+        <thead>
           <tr>
-            <td>${k.name}</td>
-            <td>${k.saves}</td>
-            <td>${k.shots}</td>
-            <td>${pct}%</td>
-            <td>${k.byType['9m'].saves}/${k.byType['9m'].shots}</td>
-            <td>${k.byType['6m'].saves}/${k.byType['6m'].shots}</td>
-            <td>${k.byType['Křídlo'].saves}/${k.byType['Křídlo'].shots}</td>
-            <td>${k.byType['Brejk'].saves}/${k.byType['Brejk'].shots}</td>
-            <td>${k.byType['7m'].saves}/${k.byType['7m'].shots}</td>
-            <td>${k.fastPlus}</td>
-            <td>${k.fastMinus}</td>
-          </tr>`;
-      }).join('');
-    }
+            <th>Brankář</th><th>Zákroky</th><th>Střely</th><th>%</th><th>9m</th><th>6m</th><th>Kř.</th><th>Br.</th><th>7m</th><th>Trhák+</th><th>Trhák-</th>
+          </tr>
+        </thead>
+        <tbody id="overviewKeepers"></tbody>
+      </table>
+    </div>
+  </section>
+</div>
 
-    function renderNav() {
-      document.getElementById('navMatches').className = app.screen === 'matches' ? 'dark' : 'light';
-      document.getElementById('navLive').className = app.screen === 'live' ? 'dark' : 'light';
-      document.getElementById('navOverview').className = app.screen === 'overview' ? 'dark' : 'light';
-      document.getElementById('screenMatches').classList.toggle('hidden', app.screen !== 'matches');
-      document.getElementById('screenLive').classList.toggle('hidden', app.screen !== 'live');
-      document.getElementById('screenOverview').classList.toggle('hidden', app.screen !== 'overview');
-    }
+<script>
+const STORAGE_KEY='handball_match_manager_full_v1';
+const rosterPlayers=['Grepl Jan','Hampl Jiří','Jurečka David','Sladovník Daniel','Bečička Martin','Hudeček Šimon','Jurík Martin','Jurík Tomáš','Letocha Radim','Sikora Daniel','Zatloukal Matyáš','Javůrek Aleš','Kamaryt Michal','Šestořád Pavel'];
+const rosterKeepers=['Jakub Hromek','Jiří Sladovník'];
+const shotTypes=['9m','6m','Křídlo','Brejk','7m'];
 
-    function render() {
-      renderNav();
-      renderMatches();
-      renderLive();
-      renderOverview();
-      saveState();
-    }
+const app={history:[],playerTab:'attack',screen:'matches',selectedMatchId:null,selectedPlayerIndex:null,selectedKeeperIndex:null,mode:'player',matches:[]};
 
-    window.addEventListener('load', () => {
-      const byId = id => document.getElementById(id);
-      byId('navMatches').onclick = () => showScreen('matches');
-      byId('navLive').onclick = () => showScreen('live');
-      byId('navOverview').onclick = () => showScreen('overview');
-      byId('createMatchBtn').onclick = createMatch;
-      byId('tabAttack').onclick = () => setTab('attack');
-      byId('tabDefense').onclick = () => setTab('defense');
-      byId('tabPenalty').onclick = () => setTab('penalty');
-      byId('ourGoalBtn').onclick = () => addGoal('our');
-      byId('oppGoalBtn').onclick = () => addGoal('opp');
-      byId('resetScoreBtn').onclick = resetScore;
-      byId('undoBtn').onclick = undoLast;
-      loadState();
-      render();
-    });
-  </script>
+function currentMatch(){return app.matches.find(m=>m.id===app.selectedMatchId)||null}
+function saveState(){localStorage.setItem(STORAGE_KEY,JSON.stringify(app))}
+function loadState(){try{const raw=localStorage.getItem(STORAGE_KEY);if(!raw)return;Object.assign(app,JSON.parse(raw));normalizeApp()}catch(_){}}
+function normalizeApp(){if(!Array.isArray(app.history))app.history=[];if(!['attack','defense','penalty'].includes(app.playerTab))app.playerTab='attack';if(!['matches','live','overview'].includes(app.screen))app.screen='matches';if(!['player','keeper'].includes(app.mode))app.mode='player';if(!Array.isArray(app.matches))app.matches=[];if(!app.matches.find(m=>m.id===app.selectedMatchId))app.selectedMatchId=app.matches[0]?.id||null;if(!Number.isInteger(app.selectedPlayerIndex))app.selectedPlayerIndex=null;if(!Number.isInteger(app.selectedKeeperIndex))app.selectedKeeperIndex=null}
+function pushHistory(){app.history.push(JSON.stringify({matches:app.matches,selectedMatchId:app.selectedMatchId,selectedPlayerIndex:app.selectedPlayerIndex,selectedKeeperIndex:app.selectedKeeperIndex,screen:app.screen,playerTab:app.playerTab,mode:app.mode}))}
+function undoLast(){if(!app.history.length)return;const prev=JSON.parse(app.history.pop());app.matches=prev.matches;app.selectedMatchId=prev.selectedMatchId;app.selectedPlayerIndex=prev.selectedPlayerIndex;app.selectedKeeperIndex=prev.selectedKeeperIndex;app.screen=prev.screen;app.playerTab=prev.playerTab;app.mode=prev.mode;normalizeApp();render()}
+
+function createMatch(){const opponent=document.getElementById('newOpponent').value.trim()||'Soupeř';const date=document.getElementById('newDate').value||'';const competition=document.getElementById('newCompetition').value.trim()||'';const match={id:'m_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),opponent,date,competition,ourScore:0,oppScore:0,players:rosterPlayers.map(name=>({name,goals:0,shots:0,assists:0,losses:0,techErrors:0,defPlus:0,defMinus:0,interruptions:0,blocks:0,gains:0,caused7m:0,twoMin:0,yellow:0,red:0,byType:Object.fromEntries(shotTypes.map(t=>[t,{goals:0,shots:0}]))})),keepers:rosterKeepers.map(name=>({name,saves:0,shots:0,fastPlus:0,fastMinus:0,byType:Object.fromEntries(shotTypes.map(t=>[t,{saves:0,shots:0}]))}))};app.matches.unshift(match);app.selectedMatchId=match.id;app.selectedPlayerIndex=null;app.selectedKeeperIndex=null;app.mode='player';app.screen='live';document.getElementById('newOpponent').value='';document.getElementById('newDate').value='';document.getElementById('newCompetition').value='';render()}
+function openMatch(id){app.selectedMatchId=id;app.selectedPlayerIndex=null;app.selectedKeeperIndex=null;app.mode='player';app.screen='live';render()}
+function showScreen(screen){app.screen=screen;render()}
+function setTab(tab){app.playerTab=tab;render()}
+function setMode(mode){app.mode=mode;render()}
+function selectPlayer(index){app.mode='player';app.selectedPlayerIndex=index;app.selectedKeeperIndex=null;render()}
+function selectKeeper(index){app.mode='keeper';app.selectedKeeperIndex=index;app.selectedPlayerIndex=null;render()}
+
+function addPlayerGoal(type){const match=currentMatch();if(!match||app.selectedPlayerIndex===null)return;pushHistory();const p=match.players[app.selectedPlayerIndex];p.goals++;p.shots++;p.byType[type].goals++;p.byType[type].shots++;match.ourScore++;render()}
+function addPlayerShot(type){const match=currentMatch();if(!match||app.selectedPlayerIndex===null)return;pushHistory();const p=match.players[app.selectedPlayerIndex];p.shots++;p.byType[type].shots++;render()}
+function addAssist(){const match=currentMatch();if(!match||app.selectedPlayerIndex===null)return;pushHistory();match.players[app.selectedPlayerIndex].assists++;render()}
+function addLoss(){const match=currentMatch();if(!match||app.selectedPlayerIndex===null)return;pushHistory();match.players[app.selectedPlayerIndex].losses++;render()}
+function addTechError(){const match=currentMatch();if(!match||app.selectedPlayerIndex===null)return;pushHistory();match.players[app.selectedPlayerIndex].techErrors++;render()}
+function addTwoMinWin(){const match=currentMatch();if(!match||app.selectedPlayerIndex===null)return;pushHistory();render()}
+function addDefense(type){const match=currentMatch();if(!match||app.selectedPlayerIndex===null)return;pushHistory();const p=match.players[app.selectedPlayerIndex];if(type==='plus')p.defPlus++;if(type==='minus')p.defMinus++;if(type==='interruptions')p.interruptions++;if(type==='blocks')p.blocks++;if(type==='gains')p.gains++;if(type==='caused7m')p.caused7m++;render()}
+function addPenalty(type){const match=currentMatch();if(!match||app.selectedPlayerIndex===null)return;pushHistory();const p=match.players[app.selectedPlayerIndex];if(type==='twoMin')p.twoMin++;if(type==='yellow')p.yellow++;if(type==='red')p.red++;render()}
+function addKeeperSave(type){const match=currentMatch();if(!match||app.selectedKeeperIndex===null)return;pushHistory();const k=match.keepers[app.selectedKeeperIndex];k.saves++;k.shots++;k.byType[type].saves++;k.byType[type].shots++;render()}
+function addKeeperGoalAllowed(type){const match=currentMatch();if(!match||app.selectedKeeperIndex===null)return;pushHistory();const k=match.keepers[app.selectedKeeperIndex];k.shots++;k.byType[type].shots++;match.oppScore++;render()}
+function addFast(type){const match=currentMatch();if(!match||app.selectedKeeperIndex===null)return;pushHistory();const k=match.keepers[app.selectedKeeperIndex];if(type==='plus')k.fastPlus++;if(type==='minus')k.fastMinus++;render()}
+function addGoal(side){const match=currentMatch();if(!match)return;pushHistory();if(side==='our')match.ourScore++;if(side==='opp')match.oppScore++;render()}
+function resetScore(){const match=currentMatch();if(!match)return;pushHistory();match.ourScore=0;match.oppScore=0;render()}
+
+function renderMatches(){const list=document.getElementById('matchesList');if(!app.matches.length){list.innerHTML='<div class="match" style="color:#64748b">Zatím nemáš žádný zápas.</div>';return}list.innerHTML=app.matches.map(m=>`<div class="match between"><div><div style="font-weight:700;font-size:18px">${m.opponent}</div><div class="small">${m.date||'Bez data'}${m.competition?' • '+m.competition:''}</div><div class="small">Skóre: ${m.ourScore} : ${m.oppScore}</div></div><button onclick="openMatch('${m.id}')" class="dark">Otevřít</button></div>`).join('')}
+function renderPlayersList(){const match=currentMatch();const list=document.getElementById('playersList');if(!match){list.innerHTML='<div class="match">Nejprve otevři zápas.</div>';return}list.innerHTML=match.players.map((p,i)=>`<div class="entity ${app.mode==='player'&&app.selectedPlayerIndex===i?'selected-player':''}" onclick="selectPlayer(${i})"><div style="font-weight:700">${p.name}</div><div class="small">Góly: ${p.goals} • Střely: ${p.shots}</div></div>`).join('')}
+function renderKeepersList(){const match=currentMatch();const list=document.getElementById('keepersList');if(!match){list.innerHTML='<div class="match">Nejprve otevři zápas.</div>';return}list.innerHTML=match.keepers.map((k,i)=>{const pct=k.shots?Math.round((k.saves/k.shots)*100):0;return `<div class="entity ${app.mode==='keeper'&&app.selectedKeeperIndex===i?'selected-keeper':''}" onclick="selectKeeper(${i})"><div style="font-weight:700">${k.name}</div><div class="small">Zákroky: ${k.saves} • Střely: ${k.shots} • ${pct}%</div></div>`}).join('')}
+function renderSelectedInfo(){const box=document.getElementById('selectedInfo');const match=currentMatch();if(!match){box.textContent='Bez zápasu';return}if(app.mode==='keeper'&&app.selectedKeeperIndex!==null){const k=match.keepers[app.selectedKeeperIndex];const pct=k.shots?Math.round((k.saves/k.shots)*100):0;box.innerHTML=`<strong>${k.name}</strong><div class="small">Zákroky: ${k.saves} • Střely: ${k.shots} • ${pct}% • Trhák+: ${k.fastPlus} • Trhák-: ${k.fastMinus}</div>`;return}if(app.selectedPlayerIndex!==null){const p=match.players[app.selectedPlayerIndex];const pct=p.shots?Math.round((p.goals/p.shots)*100):0;box.innerHTML=`<strong>${p.name}</strong><div class="small">Góly: ${p.goals} • Střely: ${p.shots} • ${pct}%</div>`;return}box.textContent='Nikdo není vybraný'}
+function renderActionButtons(){const wrap=document.getElementById('actionButtons');if(app.mode==='keeper'){wrap.innerHTML=`${shotTypes.map(t=>`<button onclick="addKeeperSave('${t}')" class="green">${t} zákrok</button><button onclick="addKeeperGoalAllowed('${t}')" class="red">${t} gól</button>`).join('')}<button onclick="addFast('plus')" class="light">Trhák+</button><button onclick="addFast('minus')" class="light">Trhák-</button>`}else if(app.playerTab==='attack'){wrap.innerHTML=`<button onclick="addAssist()" class="light">Asistence</button><button onclick="addLoss()" class="light">Ztráta</button><button onclick="addTechError()" class="light">Tech. chyba</button><button onclick="addTwoMinWin()" class="light">Zisk 2min</button>${shotTypes.map(t=>`<button onclick="addPlayerGoal('${t}')" class="green">${t} gól</button><button onclick="addPlayerShot('${t}')" class="light">${t} střela</button>`).join('')}` }else if(app.playerTab==='defense'){wrap.innerHTML=`<button onclick="addDefense('plus')" class="light">Obrana+</button><button onclick="addDefense('minus')" class="light">Obrana-</button><button onclick="addDefense('interruptions')" class="light">Přerušení</button><button onclick="addDefense('blocks')" class="light">Blok</button><button onclick="addDefense('gains')" class="light">Zisk</button><button onclick="addDefense('caused7m')" class="light">Způsobená 7m</button>`}else{wrap.innerHTML=`<button onclick="addPenalty('twoMin')" class="light">2 min</button><button onclick="addPenalty('yellow')" class="light">Žlutá karta</button><button onclick="addPenalty('red')" class="light">Červená karta</button>`}}
+function renderTabs(){const show=app.mode==='player';const attack=document.getElementById('tabAttack');const defense=document.getElementById('tabDefense');const penalty=document.getElementById('tabPenalty');document.getElementById('modePlayerBtn').className=app.mode==='player'?'dark':'light';document.getElementById('modeKeeperBtn').className=app.mode==='keeper'?'dark':'light';attack.style.display=show?'inline-block':'none';defense.style.display=show?'inline-block':'none';penalty.style.display=show?'inline-block':'none';attack.className=app.playerTab==='attack'?'dark':'light';defense.className=app.playerTab==='defense'?'dark':'light';penalty.className=app.playerTab==='penalty'?'dark':'light';document.getElementById('playerTabsWrap').style.display=show?'block':'none'}
+function renderLive(){const match=currentMatch();document.getElementById('liveTitle').textContent=match?match.opponent:'Žádný vybraný zápas';document.getElementById('liveMeta').textContent=match?`${match.date||'Bez data'}${match.competition?' • '+match.competition:''}`:'Nejprve vytvoř nebo otevři zápas';document.getElementById('liveScore').textContent=match?`${match.ourScore} : ${match.oppScore}`:'0 : 0';renderPlayersList();renderKeepersList();renderTabs();renderSelectedInfo();renderActionButtons()}
+function renderOverview(){const match=currentMatch();document.getElementById('overviewTitle').textContent=match?`Přehled: ${match.opponent}`:'Přehled zápasu';document.getElementById('overviewMeta').textContent=match?`Skóre ${match.ourScore} : ${match.oppScore}`:'Vyber zápas';const playersBody=document.getElementById('overviewPlayers');const keepersBody=document.getElementById('overviewKeepers');if(!match){playersBody.innerHTML='<tr><td colspan="21">Nejprve otevři zápas.</td></tr>';keepersBody.innerHTML='<tr><td colspan="11">Nejprve otevři zápas.</td></tr>';return}playersBody.innerHTML=match.players.map(p=>{const pct=p.shots?Math.round((p.goals/p.shots)*100):0;return `<tr><td>${p.name}</td><td>${p.goals}</td><td>${p.shots}</td><td>${pct}%</td><td>${p.assists}</td><td>${p.losses}</td><td>${p.techErrors}</td><td>${p.byType['9m'].goals}/${p.byType['9m'].shots}</td><td>${p.byType['6m'].goals}/${p.byType['6m'].shots}</td><td>${p.byType['Křídlo'].goals}/${p.byType['Křídlo'].shots}</td><td>${p.byType['Brejk'].goals}/${p.byType['Brejk'].shots}</td><td>${p.byType['7m'].goals}/${p.byType['7m'].shots}</td><td>${p.defPlus}</td><td>${p.defMinus}</td><td>${p.interruptions}</td><td>${p.blocks}</td><td>${p.gains}</td><td>${p.caused7m}</td><td>${p.twoMin}</td><td>${p.yellow}</td><td>${p.red}</td></tr>`}).join('');keepersBody.innerHTML=match.keepers.map(k=>{const pct=k.shots?Math.round((k.saves/k.shots)*100):0;return `<tr><td>${k.name}</td><td>${k.saves}</td><td>${k.shots}</td><td>${pct}%</td><td>${k.byType['9m'].saves}/${k.byType['9m'].shots}</td><td>${k.byType['6m'].saves}/${k.byType['6m'].shots}</td><td>${k.byType['Křídlo'].saves}/${k.byType['Křídlo'].shots}</td><td>${k.byType['Brejk'].saves}/${k.byType['Brejk'].shots}</td><td>${k.byType['7m'].saves}/${k.byType['7m'].shots}</td><td>${k.fastPlus}</td><td>${k.fastMinus}</td></tr>`}).join('')}
+function renderNav(){document.getElementById('navMatches').className=app.screen==='matches'?'dark':'light';document.getElementById('navLive').className=app.screen==='live'?'dark':'light';document.getElementById('navOverview').className=app.screen==='overview'?'dark':'light';document.getElementById('screenMatches').classList.toggle('hidden',app.screen!=='matches');document.getElementById('screenLive').classList.toggle('hidden',app.screen!=='live');document.getElementById('screenOverview').classList.toggle('hidden',app.screen!=='overview')}
+function render(){renderNav();renderMatches();renderLive();renderOverview();saveState()}
+
+window.addEventListener('load',()=>{const byId=id=>document.getElementById(id);byId('newDate').value=new Date().toISOString().slice(0,10);byId('navMatches').onclick=()=>showScreen('matches');byId('navLive').onclick=()=>showScreen('live');byId('navOverview').onclick=()=>showScreen('overview');byId('createMatchBtn').onclick=createMatch;byId('modePlayerBtn').onclick=()=>setMode('player');byId('modeKeeperBtn').onclick=()=>setMode('keeper');byId('tabAttack').onclick=()=>setTab('attack');byId('tabDefense').onclick=()=>setTab('defense');byId('tabPenalty').onclick=()=>setTab('penalty');byId('ourGoalBtn').onclick=()=>addGoal('our');byId('oppGoalBtn').onclick=()=>addGoal('opp');byId('resetScoreBtn').onclick=resetScore;byId('undoBtn').onclick=undoLast;loadState();render()});
+</script>
 </body>
 </html>
